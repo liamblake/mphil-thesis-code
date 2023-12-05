@@ -1,5 +1,5 @@
 This repository contains all the Julia code that was used to generate the results and figures presented in my MPhil thesis, titled "Computable Characterisations of Uncertainty in Differential Equations" and completed at the University of Adelaide in early 2023.
-The thesis itself is available [here](Computable Characterisations of Uncertainty in Differential Equations).
+The thesis itself is available [here](https://github.com/liamblake/mphil-thesis).
 
 ## Contents 
 
@@ -9,3 +9,6 @@ The thesis itself is available [here](Computable Characterisations of Uncertaint
 
 - `benes-sde`: the demonstrative implementation of the Gaussian mixture model on Benê's SDE in Chapter 4 ('A Gaussian Mixture Model').
 
+- `gulf_stream`: 
+
+- `epidemiology`: 
