@@ -1,0 +1,3 @@
+[submodule "sde-linearisation-bounds"]
+	path = sde-linearisation-bounds
+	url = git@github.com:liamblake/sde-linearisation-bounds.git
