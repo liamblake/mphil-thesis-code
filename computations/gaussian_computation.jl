@@ -1,3 +1,5 @@
+using LinearAlgebra
+
 """
     gaussian_computation!(
         state::AbstractVector,
@@ -128,7 +130,10 @@ the specified final time T.
 function _solve_state_cov_forward!(
     state,
     covm,
-    model::SDEModel,
+    d,
+    u!,
+    ∇u!,
+    σσᵀ!,
     x₀::AbstractVector,
     Σ₀::AbstractMatrix,
     t₀::Float64,
@@ -141,11 +146,10 @@ function _solve_state_cov_forward!(
     covm .= copy(Σ₀)
 
     # Pre-allocate temporary variables to reuse
-    # TODO: Will certainly break if model.d ≠ model.m
-    ut = Vector{Float64}(undef, model.d)
-    ∇ut = Matrix{Float64}(undef, model.d, model.d)
-    wtnew = Vector{Float64}(undef, model.d)
-    Kτ = Matrix{Float64}(undef, model.d, model.d)
+    ut = Vector{Float64}(undef, d)
+    ∇ut = Matrix{Float64}(undef, d, d)
+    wtnew = Vector{Float64}(undef, d)
+    Kτ = Matrix{Float64}(undef, d, d)
 
     # Ongoing time tracker
     t = t₀
@@ -158,8 +162,8 @@ function _solve_state_cov_forward!(
     while t < T && SS - SS₀ < ν
         # println("Loop: t = $t, state = $state, cov = $covm, SS = $SS")
         # Update the state variable
-        model.u!(ut, state, t)
-        model.∇u!(∇ut, state, t)
+        u!(ut, state, t)
+        ∇u!(∇ut, state, t)
         wtnew .= state + dt * inv(I - ∇ut * dt / 2) * ut
 
         # Interpolate the state at time t + dt/2
@@ -167,7 +171,7 @@ function _solve_state_cov_forward!(
 
         # Compute the covariance
         # Compute ∇u(w_τ, t + dt/2) and store in ∇ut
-        model.∇u!(∇ut, ut, t + dt / 2)
+        ∇u!(∇ut, ut, t + dt / 2)
         Kτ .= inv(I - ∇ut * dt / 2)
 
         # Compute Mτ and store in ∇ut
@@ -175,7 +179,7 @@ function _solve_state_cov_forward!(
         covm .= ∇ut * covm * transpose(∇ut)
 
         # Compute [σσᵀ](w_τ, t + dt/2) and store in ∇ut
-        model.σσᵀ!(∇ut, ut, t + dt / 2)
+        σσᵀ!(∇ut, ut, t + dt / 2)
         covm .= covm + Kτ * ∇ut * transpose(Kτ) .* dt
 
         # Correct any violations of symmetry in Σt.
