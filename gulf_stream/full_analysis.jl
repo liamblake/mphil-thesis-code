@@ -140,7 +140,7 @@ begin
         )';
         colors = "grey",
         levels = 20,
-        linewidths = 0.75,
+        linewidths = 0.5,
         zorder = 0,
         negative_linestyles = "solid",
     )
@@ -170,7 +170,7 @@ for i in range(1; step = 5, length = 4)
         lat,
         ssh[:, :, i]';
         colors = "grey",
-        linewidths = 0.75,
+        linewidths = 0.5,
         levels = 15,
         negative_linestyles = "solid",
     )
@@ -205,7 +205,7 @@ for i in range(1; step = 5, length = 4)
         lat,
         ssh[:, :, i]';
         colors = "grey",
-        linewidths = 0.75,
+        linewidths = 0.5,
         levels = 15,
         negative_linestyles = "solid",
     )
@@ -239,7 +239,7 @@ for i in range(1; step = 5, length = 4)
         lat,
         ssh[:, :, i]';
         colors = "grey",
-        linewidths = 0.75,
+        linewidths = 0.5,
         levels = 15,
         negative_linestyles = "solid",
     )
@@ -264,6 +264,45 @@ for i in range(1; step = 5, length = 4)
     close(fig)
 end
 
+############################### PLOT OF SEVERAL SOLVING TRAJECTORIES ###############################
+begin
+    fig, ax = subplots(; figsize = [6.4, 4 / 5 * 4.8])
+    ax.set_xlabel("°W")
+    ax.set_ylabel("°N")
+
+    for x0 in [[-60.5, 39.0], [-63.5, 41.5], [-61.0, 36.0], [-56.0, 40.5], [-56.0, 35]]
+        prob = ODEProblem(function (s, x, _, t)
+            vel!(s, x, t)
+        end, x0, (days[i1], days[i2]))
+        sol = solve(prob, Tsit5(); saveat = tspan)
+
+        ax.scatter(x0[1:1], x0[2:2]; s = 5.0, zorder = 5)
+        ax.plot(sol[1, :], sol[2, :]; color = "black", linewidth = 1.0)
+    end
+
+    # SSH contours
+    ax.contour(
+        lon,
+        lat,
+        ssh_interp.(glon, glat, days[i2])';
+        colors = "grey",
+        levels = 20,
+        linewidths = 0.5,
+        zorder = 0,
+        negative_linestyles = "solid",
+    )
+
+    # Overlay land
+    ax.pcolor(lon, lat, land'; cmap = "twocolor", rasterized = true, zorder = 1)
+
+    xlim(lon_range)
+    ylim(lat_range)
+    ax.set_xticks(ax.get_xticks(), -Int64.(ax.get_xticks()))
+
+    fig.savefig("$fdir/det_trajs.pdf"; dpi = dpi, bbox_inches = "tight")
+    close(fig)
+end
+
 ################################# ANALYSIS OF A SINGLE TRAJECTORY ##################################
 # Initial condition
 x₀ = [-60.5, 39.0]
@@ -275,7 +314,7 @@ gaussian_computation!(ws, Σs, 2, vel!, ∇u!, σσᵀ!, x₀, zeros(2, 2), tspa
 
 # Plot the trajectory through time
 begin
-    fig = figure()
+    fig = figure(; figsize = [6.4, 4 / 5 * 4.8])
     ax = fig.add_subplot(1, 1, 1)
 
     ax.contour(
@@ -284,7 +323,7 @@ begin
         ssh_interp.(glon, glat, days[i2])';
         colors = "grey",
         levels = 20,
-        linewidths = 0.75,
+        linewidths = 0.5,
         zorder = 0,
         negative_linestyles = "solid",
     )
@@ -326,7 +365,7 @@ num_rels = Array(num_sol)
 
 # Scatter plot of realisations
 begin
-    fig, ax = subplots()
+    fig, ax = subplots(; figsize = [6.4, 4 / 5 * 4.8])
 
     ax.contour(
         lon,
@@ -335,7 +374,7 @@ begin
         colors = "grey",
         levels = 20,
         zorder = 0,
-        linewidths = 0.75,
+        linewidths = 0.5,
         negative_linestyles = "solid",
     )
     ax.scatter(ws[end][1], ws[end][2]; c = "blue", s = 2.5, zorder = 5)
@@ -577,11 +616,11 @@ end
 
 # Plots of the samples over a short time span, with SSH contours for reference
 begin
-    end_j = findfirst(==(days[4]), tspan)
-    for t in [days[1], days[2], days[3], days[4]]
+    end_j = findfirst(==(days[7]), tspan)
+    for t in days[1:8]
         num_j = findfirst(==(t), tspan)
 
-        fig, ax = subplots()
+        fig, ax = subplots(; figsize = [6.4, 4 / 5 * 4.8])
         ax.set_xlabel("°W")
         ax.set_ylabel("°N")
 
@@ -599,11 +638,13 @@ begin
             cmap = :Purples,
             rasterized = true,
         )
-        colorbar(h; ax = ax, location = "top", aspect = 40, label = "Density")
+        # colorbar(h; ax = ax, location = "top", aspect = 40, label = "Density")
 
         # Define axis limits by range of samples at t = 3
         xlim(extrema(num_rels[1, end_j, :]))
         ylim(extrema(num_rels[2, end_j, :]))
+
+        ax.set_xticks(ax.get_xticks(), -Int64.(ax.get_xticks()))
 
         # SSH contours
         ax.contour(
@@ -613,9 +654,12 @@ begin
             colors = "grey",
             levels = 20,
             zorder = 1,
-            linewidths = 0.75,
+            linewidths = 0.5,
             negative_linestyles = "solid",
         )
+
+        # Overlay land
+        ax.pcolor(lon, lat, land'; cmap = "twocolor", rasterized = true, zorder = 2)
 
         fig.savefig("$fdir/rels_ssh_$t.pdf"; dpi = dpi, bbox_inches = "tight")
         close(fig)
@@ -1074,7 +1118,20 @@ begin
         weights[1] = 1.0
 
         # Propagate initial condition to tsplit
-        _solve_state_cov_forward!(ws[1], Σs[1], model, x₀, zeros(2, 2), days[1], tsplit, dt, Inf)
+        _solve_state_cov_forward!(
+            ws[1],
+            Σs[1],
+            2,
+            vel!,
+            ∇u!,
+            σσᵀ!,
+            x₀,
+            zeros(2, 2),
+            days[1],
+            tsplit,
+            dt,
+            Inf,
+        )
 
         # Split!
         sigma_points_symmetric!(@view(ws[2:end]), ws[1], Σs[1]; α = 0.0, include_mean = false)
@@ -1088,7 +1145,10 @@ begin
             _solve_state_cov_forward!(
                 ws[i],
                 Σs[i],
-                model,
+                2,
+                vel!,
+                ∇u!,
+                σσᵀ!,
                 copy(ws[i]),
                 copy(Σs[i]),
                 tsplit,
@@ -1156,8 +1216,8 @@ begin
         rasterized = true,
         bins = 100,
     )
-    ax_joint.scatter(getindex.(best_means, 1), getindex.(best_means, 2); color = :red, s = 2.5)
-    ax_joint.set_xticks(ax_joint.get_xticks(), -(ax_joint.get_xticks()))
+    # ax_joint.scatter(getindex.(best_means, 1), getindex.(best_means, 2); color = :red, s = 2.5)
+    ax_joint.set_xticks(ax_joint.get_xticks(), -Int64.((ax_joint.get_xticks())))
 
     # Draw contours of the GMM
     xgrid =
@@ -1168,9 +1228,9 @@ begin
         xgrid,
         ygrid,
         pdf.(Ref(best_gmm), [[x, y] for x in xgrid, y in ygrid])';
-        levels = 15,
+        levels = 12,
         colors = :red,
-        linewidths = 0.75,
+        linewidths = 0.5,
         linestyles = "solid",
     )
 
@@ -1213,6 +1273,7 @@ end
 
 # Next - two splits! (oh my god)
 begin
+    x₀ = [-60.5, 39.0]
     final_t = days[4]
 
     # Find the index of the time - bit lazy
@@ -1239,7 +1300,20 @@ begin
         weights[1] = 1.0
 
         # Propagate initial condition to tsplit
-        _solve_state_cov_forward!(ws[1], Σs[1], model, x₀, zeros(2, 2), days[1], t1, dt, Inf)
+        _solve_state_cov_forward!(
+            ws[1],
+            Σs[1],
+            2,
+            vel!,
+            ∇u!,
+            σσᵀ!,
+            x₀,
+            zeros(2, 2),
+            days[1],
+            t1,
+            dt,
+            Inf,
+        )
 
         # Split!
         sigma_points_symmetric!(@view(ws[2:5]), ws[1], Σs[1]; α = 0.0, include_mean = false)
@@ -1253,7 +1327,10 @@ begin
             _solve_state_cov_forward!(
                 ws[i],
                 Σs[i],
-                model,
+                2,
+                vel!,
+                ∇u!,
+                σσᵀ!,
                 copy(ws[i]),
                 copy(Σs[i]),
                 t1,
@@ -1280,7 +1357,10 @@ begin
             _solve_state_cov_forward!(
                 ws[i],
                 Σs[i],
-                model,
+                2,
+                vel!,
+                ∇u!,
+                σσᵀ!,
                 copy(ws[i]),
                 copy(Σs[i]),
                 t2,
@@ -1292,7 +1372,10 @@ begin
                 _solve_state_cov_forward!(
                     ws[1 + 4 * i + j],
                     Σs[1 + 4 * i + j],
-                    model,
+                    2,
+                    vel!,
+                    ∇u!,
+                    σσᵀ!,
                     copy(ws[1 + 4 * i + j]),
                     copy(Σs[1 + 4 * i + j]),
                     t2,
@@ -1379,7 +1462,6 @@ begin
     ax_joint = ax_list["B"]
     ax_joint.set_xlabel("°W")
     ax_joint.set_ylabel("°N")
-    ax_joint.set_xticks(ax_joint.get_xticks(), -ax_joint.get_xticks())
 
     ax_joint.set_facecolor((0.9882352941176471, 0.9882352941176471, 0.9921568627450981))
 
@@ -1391,7 +1473,7 @@ begin
         rasterized = true,
         bins = 100,
     )
-    ax_joint.scatter(getindex.(best_means, 1), getindex.(best_means, 2); color = :red, s = 2.5)
+    # ax_joint.scatter(getindex.(best_means, 1), getindex.(best_means, 2); color = :red, s = 2.5)
 
     # Draw contours of the GMM
     xgrid =
@@ -1402,9 +1484,9 @@ begin
         xgrid,
         ygrid,
         pdf.(Ref(best_gmm), [[x, y] for x in xgrid, y in ygrid])';
-        levels = 15,
+        levels = 12,
         colors = :red,
-        linewidths = 0.75,
+        linewidths = 0.5,
         linestyles = "solid",
     )
 
@@ -1435,8 +1517,9 @@ begin
     ax_lat.plot(pdf.(gmm_marginal(best_gmm, 2), sgrid), sgrid; color = :red, linewidth = 1.0)
     ax_lat.set_ylim(yedge[1], yedge[end])
 
+    ax_joint.set_xticks(ax_joint.get_xticks(), -Int64.(ax_joint.get_xticks()))
+
     fig.subplots_adjust(; wspace = 0, hspace = 0)
     fig.savefig("$fdir/gmm_2split_best.pdf"; bbox_inches = "tight", dpi = dpi)
     close(fig)
 end
-
