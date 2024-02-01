@@ -31,7 +31,7 @@ begin
     zgrid = range(0; stop = 2π, length = 1000)
     ψgrid = [ψ(x, z) for x in xgrid, z in zgrid]
 
-    fig, ax = subplots()
+    fig, ax = subplots(; figsize = [6.4, 4 / 5 * 4.8])
     ax.set_xlabel(L"y_1")
     ax.set_ylabel(L"y_3")
 
