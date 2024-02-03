@@ -222,10 +222,10 @@ x0 = [1 - I₀ / M, 0.0, I₀ / M, 0.0, 0.0]
 gaussian_computation!(F, Σ, 5, u!, ∇u!, σσᵀ!, x0, zeros(5, 5), ts)
 
 # Big old pairwise plot
-fdir = "../../thesis/chp06_applications/figures/seihfr"
+fdir = "../../thesis/chp07_outlook/figures/seihfr"
 xgrid = 0:0.0001:1
 begin
-    fig = figure()
+    fig = figure(; figsize = figaspect(0.75))
 
     # Marginal histograms
     ax11 = fig.add_subplot(5, 5, 1)
@@ -316,7 +316,7 @@ begin
     ax54.hist2d(sims_dens[4, :], sims_dens[5, :]; bins = 50, cmap = :Purples, rasterized = true)
 
     # Reduce space between plots
-    fig.subplots_adjust(; hspace = 0, wspace = 0)
+    fig.subplots_adjust(; hspace = 0.05, wspace = 0.05)
 
     # Set ticks to right
     ax15.yaxis.tick_right()
@@ -329,29 +329,21 @@ begin
     for i in 1:5
         for j in 1:5
             # Just hide all axis - purely demonstrative
-            ax = eval(Symbol("ax$j$i"))
-            ax.tick_params(;
-                axis = "both",
-                labelbottom = false,
-                labelleft = false,
-                labelright = false,
-                length = 0,
-            )
+            ax = eval(Symbol("ax$i$j"))
+            # ax.tick_params(; labelbottom = false, labelleft = false, labelright = false, length = 0)
 
-            if false
-                ax.tick_params(; axis = "y", labelleft = false)
+            # ax.tick_params(; axis = "y", labelleft = false)
 
-                if i == 5
-                    ax.tick_params(; axis = "y", labelsize = 9)
-                else
-                    ax.tick_params(; axis = "y", length = 0)
-                end
+            if j == 5
+                ax.tick_params(; axis = "y", labelsize = 9)
+            else
+                ax.tick_params(; axis = "y", labelleft = false, labelright = false, length = 0)
+            end
 
-                if j != 5
-                    ax.tick_params(; axis = "x", labelbottom = false, length = 0)
-                else
-                    ax.tick_params(; axis = "x", labelsize = 9)
-                end
+            if i != 5
+                ax.tick_params(; axis = "x", labelbottom = false, length = 0)
+            else
+                ax.tick_params(; axis = "x", labelsize = 9)
             end
         end
     end

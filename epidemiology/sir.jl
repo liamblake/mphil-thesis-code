@@ -83,7 +83,7 @@ function σσᵀ!(s, x, _)
 end
 
 # Output directory for figures
-fdir = "../../thesis/chp06_applications/figures/sir"
+fdir = "../../thesis/chp07_outlook/figures/sir"
 
 ########################## GENERATE REALIASATIONS AND COMPARE TO GAUSSIAN ##########################
 T = 5
@@ -149,7 +149,7 @@ F = Vector{Vector{Float64}}(undef, length(ts))
                 edgecolor=:red,
                 facecolor=:none,
                 linewidth=1.0,
-                linestyle="dashed",
+                linestyle="solid",
                 zorder=2,
             ),
         )
