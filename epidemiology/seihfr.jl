@@ -221,46 +221,61 @@ F = Vector{Vector{Float64}}(undef, length(ts))
 x0 = [1 - I₀ / M, 0.0, I₀ / M, 0.0, 0.0]
 gaussian_computation!(F, Σ, 5, u!, ∇u!, σσᵀ!, x0, zeros(5, 5), ts)
 
+function invisible_ax!(ax)
+    ax.spines["top"].set_visible(false)
+    ax.spines["right"].set_visible(false)
+    ax.spines["bottom"].set_visible(false)
+    ax.spines["left"].set_visible(false)
+
+    ax.get_xaxis().set_ticks([])
+    ax.get_yaxis().set_ticks([])
+end
+
 # Big old pairwise plot
 fdir = "../../thesis/chp07_outlook/figures/seihfr"
 xgrid = 0:0.0001:1
 begin
-    fig = figure(; figsize = figaspect(0.75))
+    fig = figure(; figsize = figaspect(0.5))
 
     # Marginal histograms
     ax11 = fig.add_subplot(5, 5, 1)
     ax11.hist(sims_dens[1, :]; bins = 50, color = :green, alpha = 0.8, density = true)
-    ax11.set_ylabel(L"S/M"; fontsize = 14)
-    ax11.set_title(L"S/M"; fontsize = 14)
+    ax11.set_xlabel(L"S/M"; fontsize = 12)
 
     ax22 = fig.add_subplot(5, 5, 7)
     ax22.hist(sims_dens[2, :]; bins = 50, color = :blue, alpha = 0.8, density = true)
+    ax22.set_xlabel(L"E/M"; fontsize = 12)
 
     ax33 = fig.add_subplot(5, 5, 13)
     ax33.hist(sims_dens[3, :]; bins = 50, color = :red, alpha = 0.8, density = true)
+    ax33.set_xlabel(L"I/M"; fontsize = 12)
 
     ax44 = fig.add_subplot(5, 5, 19)
     ax44.hist(sims_dens[4, :]; bins = 50, color = :yellow, alpha = 0.8, density = true)
+    ax44.set_xlabel(L"H/M"; fontsize = 12)
 
     ax55 = fig.add_subplot(5, 5, 25)
     ax55.hist(sims_dens[5, :]; bins = 50, color = :orange, alpha = 0.8, density = true)
+    ax55.set_xlabel(L"D/M"; fontsize = 12)
+    ax55.set_yticks([])
 
     # Pairs
     ax12 = fig.add_subplot(5, 5, 2; sharex = ax22)
     ax12.hist2d(sims_dens[2, :], sims_dens[1, :]; bins = 50, cmap = :Purples, rasterized = true)
-    ax12.set_title(L"E/M"; fontsize = 14)
+    # ax12.set_title(L"E/M"; fontsize = 12)
 
     ax13 = fig.add_subplot(5, 5, 3; sharex = ax33)
     ax13.hist2d(sims_dens[3, :], sims_dens[1, :]; bins = 50, cmap = :Purples, rasterized = true)
-    ax13.set_title(L"I/M"; fontsize = 14)
+    # ax13.set_title(L"I/M"; fontsize = 12)
 
     ax14 = fig.add_subplot(5, 5, 4; sharex = ax44)
     ax14.hist2d(sims_dens[4, :], sims_dens[1, :]; bins = 50, cmap = :Purples, rasterized = true)
-    ax14.set_title(L"H/M"; fontsize = 14)
+    # ax14.set_title(L"H/M"; fontsize = 12)
 
     ax15 = fig.add_subplot(5, 5, 5; sharex = ax55)
     ax15.hist2d(sims_dens[5, :], sims_dens[1, :]; bins = 50, cmap = :Purples, rasterized = true)
-    ax15.set_title(L"D/M"; fontsize = 14)
+    ax15.set_ylabel(L"S/M"; fontsize = 12)
+    # ax15.set_title(L"D/M"; fontsize = 12)
 
     ax23 = fig.add_subplot(5, 5, 8; sharex = ax33)
     ax23.hist2d(sims_dens[3, :], sims_dens[2, :]; bins = 50, cmap = :Purples, rasterized = true)
@@ -270,80 +285,52 @@ begin
 
     ax25 = fig.add_subplot(5, 5, 10; sharex = ax55)
     ax25.hist2d(sims_dens[5, :], sims_dens[2, :]; bins = 50, cmap = :Purples, rasterized = true)
+    ax25.set_ylabel(L"E/M"; fontsize = 12)
 
     ax34 = fig.add_subplot(5, 5, 14; sharex = ax44)
     ax34.hist2d(sims_dens[4, :], sims_dens[3, :]; bins = 50, cmap = :Purples, rasterized = true)
 
     ax35 = fig.add_subplot(5, 5, 15; sharex = ax55)
     ax35.hist2d(sims_dens[5, :], sims_dens[3, :]; bins = 50, cmap = :Purples, rasterized = true)
+    ax35.set_ylabel(L"I/M"; fontsize = 12)
 
     ax45 = fig.add_subplot(5, 5, 20; sharex = ax55)
     ax45.hist2d(sims_dens[5, :], sims_dens[4, :]; bins = 50, cmap = :Purples, rasterized = true)
-
-    # Opposite pairs
-    ax21 = fig.add_subplot(5, 5, 6; sharex = ax11)
-    ax21.hist2d(sims_dens[1, :], sims_dens[2, :]; bins = 50, cmap = :Purples, rasterized = true)
-    ax21.set_ylabel(L"E/M"; fontsize = 14)
-
-    ax31 = fig.add_subplot(5, 5, 11; sharex = ax11)
-    ax31.hist2d(sims_dens[1, :], sims_dens[3, :]; bins = 50, cmap = :Purples, rasterized = true)
-    ax31.set_ylabel(L"I/M"; fontsize = 14)
-
-    ax41 = fig.add_subplot(5, 5, 16; sharex = ax11)
-    ax41.hist2d(sims_dens[1, :], sims_dens[4, :]; bins = 50, cmap = :Purples, rasterized = true)
-    ax41.set_ylabel(L"H/M"; fontsize = 14)
-
-    ax51 = fig.add_subplot(5, 5, 21; sharex = ax11)
-    ax51.hist2d(sims_dens[1, :], sims_dens[5, :]; bins = 50, cmap = :Purples, rasterized = true)
-    ax51.set_ylabel(L"D/M"; fontsize = 14)
-
-    ax32 = fig.add_subplot(5, 5, 12; sharex = ax22)
-    ax32.hist2d(sims_dens[2, :], sims_dens[3, :]; bins = 50, cmap = :Purples, rasterized = true)
-
-    ax42 = fig.add_subplot(5, 5, 17; sharex = ax22)
-    ax42.hist2d(sims_dens[2, :], sims_dens[4, :]; bins = 50, cmap = :Purples, rasterized = true)
-
-    ax52 = fig.add_subplot(5, 5, 22; sharex = ax22)
-    ax52.hist2d(sims_dens[2, :], sims_dens[5, :]; bins = 50, cmap = :Purples, rasterized = true)
-
-    ax43 = fig.add_subplot(5, 5, 18; sharex = ax33)
-    ax43.hist2d(sims_dens[3, :], sims_dens[4, :]; bins = 50, cmap = :Purples, rasterized = true)
-
-    ax53 = fig.add_subplot(5, 5, 23; sharex = ax33)
-    ax53.hist2d(sims_dens[3, :], sims_dens[5, :]; bins = 50, cmap = :Purples, rasterized = true)
-
-    ax54 = fig.add_subplot(5, 5, 24; sharex = ax44)
-    ax54.hist2d(sims_dens[4, :], sims_dens[5, :]; bins = 50, cmap = :Purples, rasterized = true)
+    ax45.set_ylabel(L"H/M"; fontsize = 12)
 
     # Reduce space between plots
-    fig.subplots_adjust(; hspace = 0.05, wspace = 0.05)
+    fig.subplots_adjust(; hspace = 0.075, wspace = 0.075)
+    fig.align_ylabels()
 
-    # Set ticks to right
+    # Set ticks and labels to right
     ax15.yaxis.tick_right()
+    ax15.yaxis.set_label_position("right")
     ax25.yaxis.tick_right()
+    ax25.yaxis.set_label_position("right")
     ax35.yaxis.tick_right()
+    ax35.yaxis.set_label_position("right")
     ax45.yaxis.tick_right()
+    ax45.yaxis.set_label_position("right")
     ax55.yaxis.tick_right()
+    ax55.yaxis.set_label_position("right")
 
-    # Hide all interior tick labels - only yticks seem to be showing up
+    # Hide interor labels
     for i in 1:5
-        for j in 1:5
-            # Just hide all axis - purely demonstrative
+        for j in i:5
+            # row i, column j
             ax = eval(Symbol("ax$i$j"))
-            # ax.tick_params(; labelbottom = false, labelleft = false, labelright = false, length = 0)
-
-            # ax.tick_params(; axis = "y", labelleft = false)
 
             if j == 5
-                ax.tick_params(; axis = "y", labelsize = 9)
+                # Final column
+                ax.tick_params(; axis = "y", labelsize = 8)
             else
-                ax.tick_params(; axis = "y", labelleft = false, labelright = false, length = 0)
+                ax.tick_params(; axis = "y", labelleft = false, length = 0)
             end
-
-            if i != 5
-                ax.tick_params(; axis = "x", labelbottom = false, length = 0)
+            if i == j
+                # Diagonals
+                ax.tick_params(; axis = "x", labelsize = 8)
             else
-                ax.tick_params(; axis = "x", labelsize = 9)
+                ax.tick_params(; axis = "x", labelbottom = false, length = 0)
             end
         end
     end
@@ -352,8 +339,8 @@ begin
 
     # Now add the Gaussian approximations
     for i in 1:5
-        for j in 1:5
-            ax = eval(Symbol("ax$j$i"))
+        for j in i:5
+            ax = eval(Symbol("ax$i$j"))
             if i == j
                 # PDF
                 ax.plot(
@@ -361,10 +348,11 @@ begin
                     pdf.(Normal(F[end][i], sqrt(Σ[end][i, i] / M)), xgrid);
                     color = :black,
                     linewidth = 0.5,
+                    scalex = false,
                 )
             else
                 # Covariance ellipses
-                Π = [Σ[end][i, i] Σ[end][i, j]; Σ[end][j, i] Σ[end][j, j]]
+                Π = [Σ[end][j, j] Σ[end][j, i]; Σ[end][i, j] Σ[end][i, i]]
                 vals, evecs = eigen(1 / M * Π)
                 θ = atand(evecs[2, 2], evecs[1, 2])
                 ell_w = sqrt(vals[2])
@@ -372,7 +360,7 @@ begin
                 for l in [1, 2]
                     ax.add_artist(
                         PyPlot.matplotlib.patches.Ellipse(;
-                            xy = F[end][[i, j]],
+                            xy = F[end][[j, i]],
                             width = 2 * l * ell_w,
                             height = 2 * l * ell_h,
                             angle = θ,
