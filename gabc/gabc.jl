@@ -102,7 +102,8 @@ function σ!(s, _, _)
 end
 
 begin
-    npoints = 200
+    # Number of points in each dimension
+    npoints = 201
     zs = range(0; stop = 2π, length = npoints)
     xs = range(0; stop = 2π, length = npoints)
     ys = range(0; stop = 2π, length = npoints)
@@ -120,13 +121,18 @@ begin
 
     ts = range(0; stop = T, step = dt)
 
+    # Only compute the value on each of the slices, in a similar fashion to Figures 6-13 of Dombre
+    # et al. (1986).
+    slices = [0, π / 4, π / 2, 3π / 4, π, 5π / 4, 3π / 2, 7π / 4]
+    slices_idx = [findfirst(isequal(s), zs) for s in slices]
+    @assert slices == zs[slices_idx]
+
     p = Progress(length(xs) * length(ys) * length(zs))
-    # To save time (for now), only compute on the three relevant faces
     for (i, x) in enumerate(xs)
         for (j, y) in enumerate(ys)
             for (k, z) in enumerate(zs)
-                # Skip if not on visible facwe
-                if (x == 2π) || (y == 0.0) || (z == 2π)
+                # Only compute if the point is on a slice
+                if (x in slices) || (y in slices) || (z in slices)
                     _solve_state_cov_forward!(
                         w_tmp,
                         Σ_tmp,
@@ -150,98 +156,324 @@ begin
     end
     finish!(p)
 
-    # Visualise three faces of the cube
-    begin
-        fig = figure()
-        ax = fig.add_subplot(111; projection = "3d")
+    # # Visualise three faces of the cube
+    # begin
+    #     fig = figure()
+    #     ax = fig.add_subplot(111; projection = "3d")
 
-        # Setup S2 as a colormap
-        minn, maxx = extrema(S2s[.!isnan.(S2s)])
-        fnorm = PyPlot.matplotlib.colors.LogNorm(minn, maxx)
-        m = PyPlot.cm.ScalarMappable(; norm = fnorm, cmap = "pink")
-        m.set_array([])
+    #     # Setup S2 as a colormap
+    #     minn, maxx = extrema(S2s[.!isnan.(S2s)])
+    #     fnorm = PyPlot.matplotlib.colors.LogNorm(minn, maxx)
+    #     m = PyPlot.cm.ScalarMappable(; norm = fnorm, cmap = "pink")
+    #     m.set_array([])
 
-        # Plot each face
-        ax.plot_surface(
-            X[:, :, end],
-            Y[:, :, end],
-            Z[:, :, end];
-            facecolors = m.to_rgba(S2s[:, :, end]),
-            shade = false,
-            rcount = npoints,
-            ccount = npoints,
-            zorder = 0,
-        )
-        ax.plot_surface(
-            X[:, 1, :],
-            Y[:, 1, :],
-            Z[:, 1, :];
-            facecolors = m.to_rgba(S2s[:, 1, :]),
-            shade = false,
-            rcount = npoints,
-            ccount = npoints,
-            zorder = 0,
-        )
-        ax.plot_surface(
-            X[end, :, :],
-            Y[end, :, :],
-            Z[end, :, :];
-            facecolors = m.to_rgba(S2s[end, :, :]),
-            shade = false,
-            rcount = npoints,
-            ccount = npoints,
-            zorder = 0,
-        )
+    #     # Plot each face
+    #     ax.plot_surface(
+    #         X[:, :, end],
+    #         Y[:, :, end],
+    #         Z[:, :, end];
+    #         facecolors = m.to_rgba(S2s[:, :, end]),
+    #         shade = false,
+    #         rcount = npoints,
+    #         ccount = npoints,
+    #         zorder = 0,
+    #     )
+    #     ax.plot_surface(
+    #         X[:, 1, :],
+    #         Y[:, 1, :],
+    #         Z[:, 1, :];
+    #         facecolors = m.to_rgba(S2s[:, 1, :]),
+    #         shade = false,
+    #         rcount = npoints,
+    #         ccount = npoints,
+    #         zorder = 0,
+    #     )
+    #     ax.plot_surface(
+    #         X[end, :, :],
+    #         Y[end, :, :],
+    #         Z[end, :, :];
+    #         facecolors = m.to_rgba(S2s[end, :, :]),
+    #         shade = false,
+    #         rcount = npoints,
+    #         ccount = npoints,
+    #         zorder = 0,
+    #     )
 
-        xmin, xmax = extrema(xs)
-        ymin, ymax = extrema(ys)
-        zmin, zmax = extrema(zs)
-        ax.set(; xlim = [xmin, xmax], ylim = [ymin, ymax], zlim = [zmin, zmax])
+    #     xmin, xmax = extrema(xs)
+    #     ymin, ymax = extrema(ys)
+    #     zmin, zmax = extrema(zs)
+    #     ax.set(; xlim = [xmin, xmax], ylim = [ymin, ymax], zlim = [zmin, zmax])
 
-        ax.plot([xmax, xmax], [ymin, ymax], zmax; color = "grey", linewidth = 1.5, zorder = 3)
-        ax.plot([xmin, xmax], [ymin, ymin], zmax; color = "grey", linewidth = 1.5, zorder = 3)
-        ax.plot(
-            [xmax, xmax],
-            [ymin, ymin],
-            [zmin, zmax];
-            color = "grey",
-            linewidth = 1.5,
-            zorder = 3,
-        )
+    #     ax.plot([xmax, xmax], [ymin, ymax], zmax; color = "grey", linewidth = 1.5, zorder = 3)
+    #     ax.plot([xmin, xmax], [ymin, ymin], zmax; color = "grey", linewidth = 1.5, zorder = 3)
+    #     ax.plot(
+    #         [xmax, xmax],
+    #         [ymin, ymin],
+    #         [zmin, zmax];
+    #         color = "grey",
+    #         linewidth = 1.5,
+    #         zorder = 3,
+    #     )
 
-        ax.set_xlabel(L"y_1"; labelpad = -4)
-        ax.set_ylabel(L"y_2"; labelpad = -4)
-        ax.set_zlabel(L"y_3"; labelpad = -4)
+    #     ax.set_xlabel(L"y_1"; labelpad = -4)
+    #     ax.set_ylabel(L"y_2"; labelpad = -4)
+    #     ax.set_zlabel(L"y_3"; labelpad = -4)
 
-        ax.grid(false)
-        ax.margins(0)
+    #     ax.grid(false)
+    #     ax.margins(0)
 
-        ax.tick_params(; axis = "y", pad = -2)
-        ax.tick_params(; axis = "z", pad = -2)
-        ax.tick_params(; axis = "x", pad = -2)
+    #     ax.tick_params(; axis = "y", pad = -2)
+    #     ax.tick_params(; axis = "z", pad = -2)
+    #     ax.tick_params(; axis = "x", pad = -2)
 
-        # Set zoom and angle view
-        ax.view_init(30, -45, 0)
-        ax.set_box_aspect((1.0, 1.0, 1.0); zoom = 1.0)
+    #     # Set zoom and angle view
+    #     ax.view_init(30, -45, 0)
+    #     ax.set_box_aspect((1.0, 1.0, 1.0); zoom = 1.0)
 
-        fig.subplots_adjust()
-        fig.colorbar(
-            m;
-            ax = ax,
-            location = "top",
-            fraction = 0.05,
-            pad = 0.0,
-            aspect = 40,
-            shrink = 0.6,
-            label = L"S^2",
-        )
+    #     fig.subplots_adjust()
+    #     fig.colorbar(
+    #         m;
+    #         ax = ax,
+    #         location = "top",
+    #         fraction = 0.05,
+    #         pad = 0.0,
+    #         aspect = 40,
+    #         shrink = 0.6,
+    #         label = L"S^2",
+    #     )
 
-        fig.savefig("$fdir/S2_box_$(A)_$(B)_$(C).pdf")
-        close(fig)
+    #     fig.savefig("$fdir/S2_box_$(A)_$(B)_$(C).pdf")
+    #     close(fig)
 
-        # Crop the figure with the pdfcrop tool
-        run(
-            `pdfcrop --margins '0 0 0 0' $fdir/S2_box_$(A)_$(B)_$(C).pdf $fdir/S2_box_$(A)_$(B)_$(C)_cropped.pdf`,
+    #     # Crop the figure with the pdfcrop tool
+    #     run(
+    #         `pdfcrop --margins '0 0 0 0' $fdir/S2_box_$(A)_$(B)_$(C).pdf $fdir/S2_box_$(A)_$(B)_$(C)_cropped.pdf`,
+    #     )
+    # end
+end
+
+# Plot each set of slices
+begin
+    # Setup a colourmap for EVERY plot
+    minn, maxx = extrema(S2s[slices_idx, :, :])
+    fnorm = PyPlot.matplotlib.colors.LogNorm(minn, maxx)
+
+    # Change up the order
+    slices = [3π / 4, 7π / 4, π / 2, 3π / 2, π / 4, 5π / 4, 0, π] #[0, π / 4, π / 2, 3π / 4, π, 5π / 4, 3π / 2, 7π / 4]
+    slices_idx = [findfirst(isequal(s), zs) for s in slices]
+
+    # YZ
+    fig = figure(; figsize = figaspect(2))
+
+    # Simulataneously produce a key
+    fig_key = figure(; figsize = figaspect(2))
+
+    # Common axis labels: https://stackoverflow.com/a/6981055
+    # Create a big invisible axis
+    ax_labels = fig_key.add_subplot(111; frameon = false)
+    ax_labels.set_xlabel(L"y_2")
+    ax_labels.set_ylabel(L"y_3")
+    ax_labels.set_xticks([])
+    ax_labels.set_yticks([])
+
+    pc = 1
+
+    ls = [
+        "\\frac{3\\pi}{4}",
+        "\\frac{7\\pi}{4}",
+        "\\frac{\\pi}{2}",
+        "\\frac{3\\pi}{2}",
+        "\\frac{\\pi}{4}",
+        "\\frac{5\\pi}{4}",
+        "0",
+        "\\pi",
+    ]
+    for (i, s) in enumerate(slices_idx)
+        ax = fig.add_subplot(4, 2, i)
+        axk = fig_key.add_subplot(4, 2, i)
+
+        # Key
+        axk.text(0.5, 0.5, L"y_1 = %$(ls[i])"; ha = "center", va = "center")
+        axk.set_xticks([])
+        axk.set_yticks([])
+
+        if i == 1
+            ax.set_xlabel(L"y_2")
+            ax.set_ylabel(L"y_3")
+
+            ax.xaxis.tick_top()
+            ax.xaxis.set_label_position("top")
+            ax.set_xticks([0, π / 2, π, 3π / 2, 2π])
+            ax.set_xticklabels(["0", L"\pi/2", L"\pi", L"3\pi/2", L"2\pi"])
+
+            ax.set_yticks([0, π / 2, π, 3π / 2, 2π])
+            ax.set_yticklabels(["0", L"\pi/2", L"\pi", L"3\pi/2", L"2\pi"])
+        else
+            # Remove ticks and labels
+            ax.set_xticks([])
+            ax.set_yticks([])
+        end
+
+        ax.pcolormesh(
+            Z[s, :, :],
+            Y[s, :, :],
+            S2s[s, :, :]';
+            shading = "auto",
+            cmap = "pink",
+            norm = fnorm,
+            rasterized = true,
         )
     end
+
+    # Decrease spacing between plots
+    fig.subplots_adjust(; hspace = 0.05, wspace = 0.05)
+
+    fig.savefig("$fdir/S2_slices_yz.pdf"; bbox_inches = "tight", dpi = 600)
+    close(fig)
+
+    fig_key.subplots_adjust(; hspace = 0.05, wspace = 0.05)
+    fig_key.savefig("$fdir/S2_slices_yz_key.pdf"; bbox_inches = "tight", dpi = 600)
+    close(fig_key)
+
+    # XY
+    fig = figure(; figsize = figaspect(2))
+
+    # Simulataneously produce a key
+    fig_key = figure(; figsize = figaspect(2))
+
+    # Common axis labels: https://stackoverflow.com/a/6981055
+    # Create a big invisible axis
+    ax_labels = fig_key.add_subplot(111; frameon = false)
+    ax_labels.set_xlabel(L"y_1")
+    ax_labels.set_ylabel(L"y_2")
+    ax_labels.set_xticks([])
+    ax_labels.set_yticks([])
+
+    for (i, s) in enumerate(slices_idx)
+        ax = fig.add_subplot(4, 2, i)
+
+        # Key
+        axk = fig_key.add_subplot(4, 2, i)
+        axk.text(0.5, 0.5, L"y_3 = %$(ls[i])"; ha = "center", va = "center")
+        axk.set_xticks([])
+        axk.set_yticks([])
+
+        if i == 1
+            ax.set_xlabel(L"y_1")
+            ax.set_ylabel(L"y_2")
+
+            ax.xaxis.tick_top()
+            ax.xaxis.set_label_position("top")
+
+            ax.set_xticks([0, π / 2, π, 3π / 2, 2π])
+            ax.set_xticklabels(["0", L"\pi/2", L"\pi", L"3\pi/2", L"2\pi"])
+
+            ax.set_yticks([0, π / 2, π, 3π / 2, 2π])
+            ax.set_yticklabels(["0", L"\pi/2", L"\pi", L"3\pi/2", L"2\pi"])
+        else
+            # Remove ticks and labels
+            ax.set_xticks([])
+            ax.set_yticks([])
+        end
+
+        ax.pcolormesh(
+            Y[:, :, s],
+            X[:, :, s],
+            S2s[:, :, s]';
+            shading = "auto",
+            cmap = "pink",
+            norm = "log",
+            rasterized = true,
+        )
+    end
+
+    # Decrease spacing between plots
+    fig.subplots_adjust(; hspace = 0.05, wspace = 0.05)
+
+    fig.savefig("$fdir/S2_slices_xy.pdf"; bbox_inches = "tight", dpi = 600)
+    close(fig)
+
+    fig_key.subplots_adjust(; hspace = 0.05, wspace = 0.05)
+    fig_key.savefig("$fdir/S2_slices_xy_key.pdf"; bbox_inches = "tight", dpi = 600)
+    close(fig_key)
+
+    # XZ
+    fig = figure(; figsize = figaspect(2))
+
+    # Simulataneously produce a key
+    fig_key = figure(; figsize = figaspect(2))
+
+    # Common axis labels: https://stackoverflow.com/a/6981055
+    # Create a big invisible axis
+    ax_labels = fig_key.add_subplot(111; frameon = false)
+    ax_labels.set_xlabel(L"y_1")
+    ax_labels.set_ylabel(L"y_3")
+    ax_labels.set_xticks([])
+    ax_labels.set_yticks([])
+
+    # Steal the last colourmap
+    pc = 1
+
+    for (i, s) in enumerate(slices_idx)
+        ax = fig.add_subplot(4, 2, i)
+
+        # Key
+        axk = fig_key.add_subplot(4, 2, i)
+        axk.text(0.5, 0.5, L"y_2 = %$(ls[i])"; ha = "center", va = "center")
+        axk.set_xticks([])
+        axk.set_yticks([])
+
+        if i == 1
+            ax.set_xlabel(L"y_1")
+            ax.set_ylabel(L"y_3")
+
+            ax.xaxis.tick_top()
+            ax.xaxis.set_label_position("top")
+
+            ax.set_xticks([0, π / 2, π, 3π / 2, 2π])
+            ax.set_xticklabels(["0", L"\pi/2", L"\pi", L"3\pi/2", L"2\pi"])
+
+            ax.set_yticks([0, π / 2, π, 3π / 2, 2π])
+            ax.set_yticklabels(["0", L"\pi/2", L"\pi", L"3\pi/2", L"2\pi"])
+        else
+            # Remove ticks and labels
+            ax.set_xticks([])
+            ax.set_yticks([])
+        end
+
+        pc = ax.pcolormesh(
+            Z[:, s, :],
+            X[:, s, :],
+            S2s[:, s, :]';
+            shading = "auto",
+            cmap = "pink",
+            norm = "log",
+            rasterized = true,
+        )
+    end
+
+    # Decrease spacing between plots
+    fig.subplots_adjust(; hspace = 0.05, wspace = 0.05)
+
+    fig.savefig("$fdir/S2_slices_xz.pdf"; bbox_inches = "tight", dpi = 600)
+    close(fig)
+
+    fig_key.subplots_adjust(; hspace = 0.05, wspace = 0.05)
+    fig_key.savefig("$fdir/S2_slices_xz_key.pdf"; bbox_inches = "tight", dpi = 600)
+    close(fig_key)
+
+    # Create a separate PDF with the colourbar
+    fig = figure(; figsize = figaspect(2))
+    fig.gca().set_visible(false)
+    cb = fig.colorbar(
+        PyPlot.cm.ScalarMappable(; norm = fnorm, cmap = "pink");
+        orientation = "vertical",
+        location = "right",
+        # label = L"S^2",
+        aspect = 40,
+    )
+    cb.set_label(L"S^2"; rotation = 0)
+
+    fig.savefig("$fdir/S2_slices_colourbar.pdf"; bbox_inches = "tight", dpi = 600)
+    close(fig)
 end
