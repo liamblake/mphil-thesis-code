@@ -1,4 +1,4 @@
-This repository contains all the Julia code that was used to generate the results and figures presented in my MPhil thesis, titled "Computable Characterisations of Uncertainty in Differential Equations" and completed at the University of Adelaide in early 2023.
+This repository contains all the Julia code that was used to generate the results and figures presented in my MPhil thesis, titled "Computable Characterisations of Uncertainty in Differential Equations" and completed at the University of Adelaide in early 2024.
 The thesis itself is available [here](https://github.com/liamblake/mphil-thesis).
 
 ## Contents
